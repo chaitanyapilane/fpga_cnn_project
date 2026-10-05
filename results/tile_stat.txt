@@ -1,0 +1,22 @@
+
+3. Printing statistics.
+
+=== tile ===
+
+   Number of wires:                 79
+   Number of wire bits:           2221
+   Number of public wires:          19
+   Number of public wire bits:     400
+   Number of memories:               0
+   Number of memory bits:            0
+   Number of processes:              0
+   Number of cells:                425
+     BUFG                            1
+     CARRY4                          8
+     DSP48E1                        16
+     FDRE                           71
+     IBUF                          261
+     LUT2                            2
+     LUT3                           33
+     OBUF                           33
+
