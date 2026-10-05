@@ -1,0 +1,63 @@
+digraph G {
+  rankdir=LR; newrank=true; nodesep=0.45; ranksep=0.9; splines=spline;
+  node [shape=box, style="rounded,filled", fillcolor=white, fontname="Helvetica-Bold",
+        fontsize=14, penwidth=2.2, margin="0.2,0.12"];
+  edge [penwidth=2.5, arrowsize=0.9];
+
+  subgraph cluster_mem {
+    label="Memory"; fontsize=24; fontcolor=gray40; style="dashed,rounded"; color=gray60;
+    EXT [label="External\nMemory", fillcolor="#f2f2f2"];
+    DMA [label="DMA"];
+    BUF [label="Weight / Input\nBuffers"];
+    OBUF [label="Output\nBuffer"];
+  }
+
+  subgraph cluster_comp {
+    label="Computing"; fontsize=24; fontcolor=gray40; style="dashed,rounded"; color=gray60;
+    subgraph cluster_sched {
+      label="EDF Scheduler"; fontsize=16; style="rounded"; color=black; penwidth=2.5;
+      JT [label="Job table\n(deadline, chunks left)"];
+      ALLOC [label="Tile allocator\n(grant at chunk boundary)"];
+    }
+    subgraph cluster_arr {
+      label="Reconfigurable PE Array (64 INT8 MACs)"; labeljust=l; fontsize=16;
+      style="rounded"; color="#c00000"; penwidth=2.5;
+      T0 [label="Tile 0\n16 MACs", fillcolor="#fde9e7"];
+      T1 [label="Tile 1\n16 MACs", fillcolor="#fde9e7"];
+      T2 [label="Tile 2\n16 MACs", fillcolor="#fde9e7"];
+      T3 [label="Tile 3\n16 MACs", fillcolor="#fde9e7"];
+    }
+    PP [label="Bias + Requantize\nReLU + MaxPool", fillcolor="#fff3d6", color="#e69500"];
+  }
+
+  LEG [shape=plain, style="", label=<
+    <TABLE BORDER="1" CELLBORDER="0" CELLSPACING="4" BGCOLOR="#eeeeee">
+      <TR><TD><B>Legend</B></TD></TR>
+      <TR><TD ALIGN="LEFT"><FONT COLOR="#2e9e2e">&#9472;&#9472;&#9654; LeNet data (job 0)</FONT></TD></TR>
+      <TR><TD ALIGN="LEFT"><FONT COLOR="#7030a0">&#9472;&#9472;&#9654; SmallCNN data (job 1)</FONT></TD></TR>
+      <TR><TD ALIGN="LEFT"><FONT COLOR="#c00000">- - &#9654; Scheduler control</FONT></TD></TR>
+      <TR><TD ALIGN="LEFT"><FONT COLOR="#e69500">&#9472;&#9472;&#9654; Results</FONT></TD></TR>
+    </TABLE>>];
+
+  EXT -> DMA [dir=both, penwidth=4];
+  DMA -> BUF [penwidth=4];
+  BUF -> T0 [color="#2e9e2e"];
+  BUF -> T1 [color="#2e9e2e"];
+  BUF -> T2 [color="#7030a0"];
+  BUF -> T3 [color="#7030a0"];
+
+  JT -> ALLOC [color="#c00000"];
+  ALLOC -> T0 [color="#c00000", style=dashed, label="set_owner", fontcolor="#c00000"];
+  ALLOC -> T1 [color="#c00000", style=dashed];
+  ALLOC -> T2 [color="#c00000", style=dashed];
+  ALLOC -> T3 [color="#c00000", style=dashed];
+
+  T0 -> PP [color="#e69500"]; T1 -> PP [color="#e69500"];
+  T2 -> PP [color="#e69500"]; T3 -> PP [color="#e69500"];
+  PP -> OBUF [color="#e69500"];
+  OBUF -> DMA [penwidth=4, constraint=false];
+
+  {rank=same; T0; T1; T2; T3}
+  T0 -> T1 -> T2 -> T3 [style=invis];
+  LEG -> EXT [style=invis];
+}
