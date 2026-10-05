@@ -1,0 +1,5 @@
+venv/
+data/
+*.vcd
+sim
+__pycache__/
