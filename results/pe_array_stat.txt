@@ -1,0 +1,24 @@
+
+4. Printing statistics.
+
+=== pe_array ===
+
+   Number of wires:                308
+   Number of wire bits:           8939
+   Number of public wires:          94
+   Number of public wire bits:    2814
+   Number of memories:               0
+   Number of memory bits:            0
+   Number of processes:              0
+   Number of cells:               1735
+     BUFG                            1
+     CARRY4                         32
+     DSP48E1                        64
+     FDRE                          296
+     IBUF                         1050
+     LUT2                            8
+     LUT3                          132
+     LUT4                            4
+     LUT5                            4
+     OBUF                          144
+
