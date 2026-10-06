@@ -3002,6 +3002,6 @@ Found and reported 0 problems.
      SRL16E                          8
 
 Warnings: 1 unique messages, 1 total
-End of script. Logfile hash: df4f5b2056, CPU: user 4.31s system 0.07s, MEM: 139.21 MB peak
+End of script. Logfile hash: df4f5b2056, CPU: user 5.74s system 0.11s, MEM: 139.08 MB peak
 Yosys 0.33 (git sha1 2584903a060)
-Time spent: 32% 20x read_verilog (1 sec), 13% 8x techmap (0 sec), ...
+Time spent: 33% 20x read_verilog (1 sec), 13% 8x techmap (0 sec), ...
