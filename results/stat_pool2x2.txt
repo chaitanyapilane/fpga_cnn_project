@@ -1,0 +1,23 @@
+
+3. Printing statistics.
+
+=== pool2x2 ===
+
+   Number of wires:                 56
+   Number of wire bits:            198
+   Number of public wires:           9
+   Number of public wire bits:      44
+   Number of memories:               0
+   Number of memory bits:            0
+   Number of processes:              0
+   Number of cells:                103
+     BUFG                            1
+     CARRY4                          3
+     FDRE                            9
+     IBUF                           35
+     LUT3                           26
+     LUT4                            4
+     LUT5                            2
+     LUT6                           14
+     OBUF                            9
+

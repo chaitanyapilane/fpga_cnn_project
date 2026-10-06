@@ -1,0 +1,24 @@
+
+3. Printing statistics.
+
+=== postproc ===
+
+   Number of wires:                 70
+   Number of wire bits:            773
+   Number of public wires:          12
+   Number of public wire bits:     206
+   Number of memories:               0
+   Number of memory bits:            0
+   Number of processes:              0
+   Number of cells:                168
+     BUFG                            1
+     CARRY4                         20
+     DSP48E1                         2
+     FDRE                            3
+     FDSE                            7
+     IBUF                           83
+     INV                             1
+     LUT2                           33
+     LUT6                            9
+     OBUF                            9
+

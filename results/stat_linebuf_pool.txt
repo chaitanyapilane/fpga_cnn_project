@@ -1,0 +1,26 @@
+
+3. Printing statistics.
+
+=== linebuf_pool ===
+
+   Number of wires:                 61
+   Number of wire bits:            190
+   Number of public wires:          11
+   Number of public wire bits:      50
+   Number of memories:               0
+   Number of memory bits:            0
+   Number of processes:              0
+   Number of cells:                101
+     BUFG                            1
+     CARRY4                          4
+     FDRE                           28
+     IBUF                           11
+     INV                             1
+     LUT2                            8
+     LUT3                           19
+     LUT4                            9
+     LUT5                            1
+     LUT6                            8
+     OBUF                            9
+     RAM32M                          2
+
