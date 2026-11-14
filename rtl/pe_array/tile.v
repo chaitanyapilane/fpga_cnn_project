@@ -1,56 +1,87 @@
-// 16-MAC INT8 tile: multipliers (DSP) -> 4-level pipelined adder tree (LUT) -> accumulator.
-// Latency: 6 cycles from first input beat to out_valid.
 module tile #(parameter N = 16)(
-  input  clk, rst,
-  input  in_valid, in_first, in_last,
-  input  [N*8-1:0] a,
-  input  [N*8-1:0] w,
-  output reg out_valid,
-  output reg signed [31:0] out_sum
+    input  clk, rst,
+    input  in_valid, in_first, in_last,
+    input  [N*8-1:0] a,
+    input  [N*8-1:0] w,
+    output reg out_valid,
+    output reg signed [31:0] out_sum
 );
-  // Stage 1: one multiplier per lane, each with its own register (DSP48)
-  wire [N*16-1:0] pflat;
-  genvar gi;
-  generate for (gi = 0; gi < N; gi = gi + 1) begin : mul
-    (* use_dsp = "yes" *) reg signed [15:0] pr;
-    always @(posedge clk) pr <= $signed(a[8*gi +: 8]) * $signed(w[8*gi +: 8]);
-    assign pflat[16*gi +: 16] = pr;
-  end endgenerate
 
-  reg v1, f1, lst1;
-  always @(posedge clk) begin
-    v1   <= rst ? 1'b0 : in_valid;
-    f1   <= in_first;
-    lst1 <= in_last;
-  end
+    // Stages 1–3: input, multiplier and output registers for each DSP.
+    wire signed [15:0] product [0:N-1];
+    genvar lane;
+    generate
+        for (lane = 0; lane < N; lane = lane + 1) begin : mul
+            reg signed [7:0] a_q, w_q;
+            (* use_dsp = "yes" *) reg signed [15:0] m_q;
+            reg signed [15:0] p_q;
 
-  // Stage 2: pipelined adder tree, kept in LUT fabric
-  (* use_dsp = "no" *) reg signed [16:0] t1 [0:7];
-  (* use_dsp = "no" *) reg signed [17:0] t2 [0:3];
-  (* use_dsp = "no" *) reg signed [18:0] t3 [0:1];
-  (* use_dsp = "no" *) reg signed [19:0] sum;
-  reg [3:0] vv, ff, ll;
-  integer j;
-  always @(posedge clk) begin
-    for (j = 0; j < 8; j = j + 1)
-      t1[j] <= $signed(pflat[32*j +: 16]) + $signed(pflat[32*j+16 +: 16]);
-    for (j = 0; j < 4; j = j + 1) t2[j] <= t1[2*j] + t1[2*j+1];
-    for (j = 0; j < 2; j = j + 1) t3[j] <= t2[2*j] + t2[2*j+1];
-    sum <= t3[0] + t3[1];
-    vv <= {vv[2:0], rst ? 1'b0 : v1};
-    ff <= {ff[2:0], f1};
-    ll <= {ll[2:0], lst1};
-  end
-  wire v2 = vv[3], f2 = ff[3], l2 = ll[3];
+            always @(posedge clk) begin
+                a_q <= $signed(a[8*lane +: 8]);
+                w_q <= $signed(w[8*lane +: 8]);
+                m_q <= a_q * w_q;
+                p_q <= m_q;
+            end
 
-  // Stage 3: accumulate
-  reg signed [31:0] acc;
-  wire signed [31:0] nxt = (f2 ? 32'sd0 : acc) + sum;
-  always @(posedge clk) begin
-    out_valid <= 1'b0;
-    if (!rst && v2) begin
-      acc <= nxt;
-      if (l2) begin out_sum <= nxt; out_valid <= 1'b1; end
+            assign product[lane] = p_q;
+        end
+    endgenerate
+
+    // Stage 4: each registered group contains four signed products.
+    wire signed [16:0] pair_sum [0:7];
+    (* use_dsp = "no" *) reg signed [17:0] group_sum [0:3];
+
+    genvar pair_idx, group_idx;
+    generate
+        for (pair_idx = 0; pair_idx < 8; pair_idx = pair_idx + 1) begin : pairs
+            assign pair_sum[pair_idx] =
+                product[2*pair_idx] + product[2*pair_idx+1];
+        end
+
+        for (group_idx = 0; group_idx < 4; group_idx = group_idx + 1) begin : groups
+            always @(posedge clk)
+                group_sum[group_idx] <=
+                    pair_sum[2*group_idx] + pair_sum[2*group_idx+1];
+        end
+    endgenerate
+
+    // Stage 5: combine the four groups into one signed 16-lane sum.
+    wire signed [18:0] lower_sum = group_sum[0] + group_sum[1];
+    wire signed [18:0] upper_sum = group_sum[2] + group_sum[3];
+    (* use_dsp = "no" *) reg signed [19:0] beat_sum;
+
+    always @(posedge clk)
+        beat_sum <= lower_sum + upper_sum;
+
+    // Carry the control bits alongside the five data stages.
+    reg [4:0] valid_pipe, first_pipe, last_pipe;
+    always @(posedge clk) begin
+        if (rst) begin
+            valid_pipe <= 5'b0;
+            first_pipe <= 5'b0;
+            last_pipe  <= 5'b0;
+        end else begin
+            valid_pipe <= {valid_pipe[3:0], in_valid};
+            first_pipe <= {first_pipe[3:0], in_first};
+            last_pipe  <= {last_pipe[3:0],  in_last};
+        end
     end
-  end
+
+    // Stage 6: first starts a new accumulation; last emits its result.
+    reg signed [31:0] acc;
+    wire signed [31:0] beat_ext = {{12{beat_sum[19]}}, beat_sum};
+    wire signed [31:0] next_acc =
+        first_pipe[4] ? beat_ext : acc + beat_ext;
+
+    always @(posedge clk) begin
+        out_valid <= 1'b0;
+        if (!rst && valid_pipe[4]) begin
+            acc <= next_acc;
+            if (last_pipe[4]) begin
+                out_sum   <= next_acc;
+                out_valid <= 1'b1;
+            end
+        end
+    end
+
 endmodule

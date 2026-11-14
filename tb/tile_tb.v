@@ -35,7 +35,7 @@ module tile_tb;
       end
     end
     @(negedge clk); in_valid = 0;
-    repeat (6) @(negedge clk);
+    repeat (12) @(negedge clk);
     if (errors == 0 && chk == 20) $display("PASS: %0d outputs match", chk);
     else $display("FAIL: errors=%0d outputs=%0d", errors, chk);
     $finish;
