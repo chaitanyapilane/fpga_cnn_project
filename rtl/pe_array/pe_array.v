@@ -15,10 +15,11 @@ module pe_array #(parameter T = 4, N = 16)(
 
   genvar g;
   generate for (g = 0; g < T; g = g + 1) begin : t
-    reg [2:0] pipe;                              // in-flight beats
+    localparam TILE_STAGES = 6;
+    reg [TILE_STAGES-1:0] pipe;                              // in-flight beats
     always @(posedge clk)
-      if (rst) pipe <= 3'b0;
-      else     pipe <= {pipe[1:0], in_valid[g]};
+      if (rst) pipe <= {TILE_STAGES{1'b0}};
+      else     pipe <= {pipe[TILE_STAGES-2:0], in_valid[g]};
     // A bubble drains the pipeline but does not end the current dot product.
     reg accumulating;
     always @(posedge clk)
