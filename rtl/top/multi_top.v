@@ -9,11 +9,13 @@ module multi_top #(
   output [T*12-1:0]  res_tag,
   output [T*32-1:0]  res_val
 );
+  localparam MAX_BEATS = (BA > BB) ? BA : BB;
+  localparam BEAT_W = MAX_BEATS > 1 ? $clog2(MAX_BEATS) : 1;
   reg [31:0] now;
   reg [10:0] nextA, nextB;
   reg [T-1:0]    busy, cjob;
   reg [T*11-1:0] cidx;
-  reg [T*5-1:0]  cbeat;
+  reg [T*BEAT_W-1:0]  cbeat;
 
   reg [T-1:0]    take, tjob;
   reg [T*11-1:0] tidx;
@@ -23,7 +25,7 @@ module multi_top #(
   always @* begin
     nA = nextA; nB = nextB; take = 0; tjob = 0; tidx = 0;
     for (t = 0; t < T; t = t + 1) begin
-      can = !busy[t] || (cbeat[t*5 +: 5] == (cjob[t] ? BB-1 : BA-1));
+      can = !busy[t] || (cbeat[t*BEAT_W +: BEAT_W] == (cjob[t] ? BB-1 : BA-1));
       availA = (now >= ARR_A) && (nA < NA);
       availB = (now >= ARR_B) && (nB < NB);
       if (SPLIT != 0) begin
@@ -48,10 +50,10 @@ module multi_top #(
       for (t = 0; t < T; t = t + 1) begin
         if (take[t]) begin
           busy[t] <= 1; cjob[t] <= tjob[t];
-          cidx[t*11 +: 11] <= tidx[t*11 +: 11]; cbeat[t*5 +: 5] <= 0;
+          cidx[t*11 +: 11] <= tidx[t*11 +: 11]; cbeat[t*BEAT_W +: BEAT_W] <= 0;
         end else if (busy[t]) begin
-          if (cbeat[t*5 +: 5] == (cjob[t] ? BB-1 : BA-1)) busy[t] <= 0;
-          else cbeat[t*5 +: 5] <= cbeat[t*5 +: 5] + 1;
+          if (cbeat[t*BEAT_W +: BEAT_W] == (cjob[t] ? BB-1 : BA-1)) busy[t] <= 0;
+          else cbeat[t*BEAT_W +: BEAT_W] <= cbeat[t*BEAT_W +: BEAT_W] + 1;
         end
       end
     end
@@ -61,7 +63,7 @@ module multi_top #(
   wire [T*32-1:0] o_sum;
   genvar g;
   generate for (g = 0; g < T; g = g + 1) begin : tl
-    wire [4:0]  bt = cbeat[g*5 +: 5];
+    wire [BEAT_W-1:0] bt = cbeat[g*BEAT_W +: BEAT_W];
     wire        j  = cjob[g];
     wire [10:0] ix = cidx[g*11 +: 11];
     assign m_job[g]           = j;

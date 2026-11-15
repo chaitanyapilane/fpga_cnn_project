@@ -52,7 +52,7 @@ module multi_top_tb #(parameter SPLIT = 0, ARR_A = 500, DL_A = 3000, ARR_B = 0, 
     $display("  lenet    latency=%0d deadline=%0d  %0s", endA - ARR_A, DL_A, missA ? "MISSED" : "met");
     $display("  smallcnn latency=%0d deadline=%0d  %0s", endB - ARR_B, DL_B, missB ? "MISSED" : "met");
     if (errors == 0 && cntA == 1024 && cntB == 256) $display("  PASS: all 1280 outputs bit-exact");
-    else $display("  FAIL");
+    else $fatal(1, "FAIL: errors=%0d outputs=%0d/%0d", errors, cntA, cntB);
     $finish;
   end
 endmodule
