@@ -19,7 +19,12 @@ module pe_array #(parameter T = 4, N = 16)(
     always @(posedge clk)
       if (rst) pipe <= 3'b0;
       else     pipe <= {pipe[1:0], in_valid[g]};
-    assign idle[g] = ~(in_valid[g] | (|pipe));
+    // A bubble drains the pipeline but does not end the current dot product.
+    reg accumulating;
+    always @(posedge clk)
+      if (rst) accumulating <= 1'b0;
+      else if (in_valid[g]) accumulating <= !in_last[g];
+    assign idle[g] = !(accumulating || in_valid[g] || (|pipe));
 
     always @(posedge clk)
       if (rst) owner[g*2 +: 2] <= 2'd0;
