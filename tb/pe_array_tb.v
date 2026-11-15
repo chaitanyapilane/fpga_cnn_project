@@ -26,6 +26,14 @@ module pe_array_tb;
     @(negedge clk); set_owner = 0;
     if (idle !== 4'b1111) begin errors = errors + 1; $display("FAIL: tiles not idle"); end
     for (b = 0; b < 4; b = b + 1) begin
+      if (b == 1) begin
+        @(negedge clk);
+        in_valid = 0; in_first = 0;
+        set_owner = 4'b0001; new_owner[1:0] = 2'd3;
+        repeat (6) @(negedge clk);
+        if (idle[0] !== 1'b0 || out_owner[1:0] !== 2'd1)
+          $fatal(1, "unfinished tile became idle or changed owner during a bubble");
+      end
       @(negedge clk);
       for (t = 0; t < 4; t = t + 1) for (k = 0; k < 16; k = k + 1) begin
         x = $random; y = $random;
@@ -49,7 +57,7 @@ module pe_array_tb;
       end
     end
     if (errors == 0) $display("PASS: 4 tiles, results and owner tags correct, busy reassign rejected");
-    else $display("FAIL: %0d errors", errors);
+    else $fatal(1, "FAIL: %0d errors", errors);
     $finish;
   end
 endmodule
