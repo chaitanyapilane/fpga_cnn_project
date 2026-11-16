@@ -1,0 +1,25 @@
+
+3. Printing statistics.
+
+=== argmax ===
+
+   Number of wires:                 45
+   Number of wire bits:            229
+   Number of public wires:           9
+   Number of public wire bits:      80
+   Number of memories:               0
+   Number of memory bits:            0
+   Number of processes:              0
+   Number of cells:                126
+     BUFG                            1
+     CARRY4                          4
+     FDRE                           45
+     IBUF                           35
+     INV                             1
+     LUT2                            1
+     LUT4                            2
+     LUT5                            4
+     LUT6                           27
+     MUXF7                           1
+     OBUF                            5
+

@@ -67,7 +67,8 @@ module multi_top #(
     wire        j  = cjob[g];
     wire [10:0] ix = cidx[g*11 +: 11];
     assign m_job[g]           = j;
-    assign m_addr[g*14 +: 14] = j ? (ix * BB + bt) : (ix * BA + bt);
+    wire [14:0] base = j ? ((ix << 4) + (ix << 1)) : ((ix << 3) + (ix << 1));
+    assign m_addr[g*14 +: 14] = base[13:0] + bt;
 
     reg v_d, f_d, l_d;
     always @(posedge clk) begin

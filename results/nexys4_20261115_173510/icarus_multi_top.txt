@@ -1,0 +1,5 @@
+SPLIT=0  makespan=3721  outputs: lenet 1024/1024, smallcnn 256/256, errors=0
+  lenet    latency=2572 deadline=3000  met
+  smallcnn latency=3720 deadline=4000  met
+  PASS: all 1280 outputs bit-exact
+tb/multi_top_tb.v:56: $finish called at 37260 (1s)

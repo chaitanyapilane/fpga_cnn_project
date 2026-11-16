@@ -1,0 +1,160 @@
+
+=================== 1. PROJECT STRUCTURE AND HISTORY ===================
+rtl/pe_array:
+mac.v
+pe_array.v
+tile.v
+
+rtl/scheduler:
+chunks_lenet.mem
+chunks_smallcnn.mem
+scheduler.v
+
+rtl/top:
+argmax.v
+demo_top.v
+linebuf_pool.v
+multi_ctrl.v
+multi_top.v
+pool2x2.v
+postproc.v
+34c562b Board demo wrapper with BRAM and hardware checker
+f27d3de Report draft
+65e16fa Report tables
+bae8feb Per-block Yosys resource table
+d7b9904 LeNet FC layers + argmax verified: hardware predicts 7
+aabae4d conv2 chain verified
+3f44eaf conv1 chain: tile + postproc + line-buffer pool, 864 activations
+8e4d2cf 2x2 max-pool unit verified on LeNet conv1
+
+=================== 2. CNN WORKLOAD (MACs per inference) ===================
+LeNet-5
+  TOTAL MACs/inference = 281,640
+SmallCNN
+  TOTAL MACs/inference = 2,811,904
+
+=================== 3. QUANTIZED ACCURACY (float vs full-integer) ===================
+LeNet-5  : float 97.80%  full-integer 97.85%
+SmallCNN : float 70.50%  full-integer 70.50%
+
+=================== 4. 16-MAC TILE vs PYTORCH (LeNet conv1, 3456 outputs) ===================
+PASS: 3456 conv1 outputs match PyTorch reference
+
+=================== 5. LeNet CONV1 CHAIN: tile -> bias/ReLU/requant -> pool ===================
+PASS: conv1 -> bias/ReLU/requant -> pool: 864 activations match
+
+=================== 6. LeNet FULLY CONNECTED + ARGMAX (predicts digit 7) ===================
+PASS: hardware predicts digit 7 (expected 7)
+
+=================== 7. MAIN RESULT: DYNAMIC EDF vs STATIC SPLITS (2 CNNs share 4 tiles) ===================
+SPLIT=0  makespan=3718  outputs: lenet 1024/1024, smallcnn 256/256, errors=0
+  lenet    latency=2569 deadline=3000  met
+  smallcnn latency=3717 deadline=4000  met
+  PASS: all 1280 outputs bit-exact
+SPLIT=1  makespan=10746  outputs: lenet 1024/1024, smallcnn 256/256, errors=0
+  lenet    latency=10245 deadline=3000  MISSED
+  smallcnn latency=1553 deadline=4000  met
+  PASS: all 1280 outputs bit-exact
+SPLIT=2  makespan=5626  outputs: lenet 1024/1024, smallcnn 256/256, errors=0
+  lenet    latency=5125 deadline=3000  MISSED
+  smallcnn latency=2309 deadline=4000  met
+  PASS: all 1280 outputs bit-exact
+SPLIT=3  makespan=4614  outputs: lenet 1024/1024, smallcnn 256/256, errors=0
+  lenet    latency=3425 deadline=3000  MISSED
+  smallcnn latency=4613 deadline=4000  MISSED
+  PASS: all 1280 outputs bit-exact
+
+=================== 8. FPGA RESOURCE ESTIMATE (Yosys, 4-tile array + EDF controller) ===================
+Generating RTLIL representation for module `\CARRY4'.
+Generating RTLIL representation for module `\FDRE'.
+Generating RTLIL representation for module `\FDRE_1'.
+Generating RTLIL representation for module `\RAM32M'.
+Generating RTLIL representation for module `\RAM32M16'.
+Generating RTLIL representation for module `\DSP48E1'.
+Marked 1 switch rules as full_case in process $proc$/usr/bin/../share/yosys/xilinx/cells_sim.v:1812$1167 in module RAM32M.
+Marked 1 switch rules as full_case in process $proc$/usr/bin/../share/yosys/xilinx/cells_sim.v:527$788 in module FDRE_1.
+Marked 1 switch rules as full_case in process $proc$/usr/bin/../share/yosys/xilinx/cells_sim.v:494$784 in module FDRE.
+Found init rule in `\RAM32M.$proc$/usr/bin/../share/yosys/xilinx/cells_sim.v:1806$1293'.
+Found init rule in `\RAM32M.$proc$/usr/bin/../share/yosys/xilinx/cells_sim.v:1805$1292'.
+Found init rule in `\RAM32M.$proc$/usr/bin/../share/yosys/xilinx/cells_sim.v:1804$1291'.
+Found init rule in `\RAM32M.$proc$/usr/bin/../share/yosys/xilinx/cells_sim.v:1803$1290'.
+Found init rule in `\FDRE_1.$proc$/usr/bin/../share/yosys/xilinx/cells_sim.v:0$791'.
+Found init rule in `\FDRE.$proc$/usr/bin/../share/yosys/xilinx/cells_sim.v:0$787'.
+Creating decoders for process `\RAM32M.$proc$/usr/bin/../share/yosys/xilinx/cells_sim.v:1806$1293'.
+Creating decoders for process `\RAM32M.$proc$/usr/bin/../share/yosys/xilinx/cells_sim.v:1805$1292'.
+Creating decoders for process `\RAM32M.$proc$/usr/bin/../share/yosys/xilinx/cells_sim.v:1804$1291'.
+Creating decoders for process `\RAM32M.$proc$/usr/bin/../share/yosys/xilinx/cells_sim.v:1803$1290'.
+Creating decoders for process `\RAM32M.$proc$/usr/bin/../share/yosys/xilinx/cells_sim.v:1812$1167'.
+Creating decoders for process `\FDRE_1.$proc$/usr/bin/../share/yosys/xilinx/cells_sim.v:0$791'.
+Creating decoders for process `\FDRE_1.$proc$/usr/bin/../share/yosys/xilinx/cells_sim.v:527$788'.
+Creating decoders for process `\FDRE.$proc$/usr/bin/../share/yosys/xilinx/cells_sim.v:0$787'.
+Creating decoders for process `\FDRE.$proc$/usr/bin/../share/yosys/xilinx/cells_sim.v:494$784'.
+Creating register for signal `\RAM32M.\mem_a' using process `\RAM32M.$proc$/usr/bin/../share/yosys/xilinx/cells_sim.v:1812$1167'.
+Creating register for signal `\RAM32M.\mem_b' using process `\RAM32M.$proc$/usr/bin/../share/yosys/xilinx/cells_sim.v:1812$1167'.
+Creating register for signal `\RAM32M.\mem_c' using process `\RAM32M.$proc$/usr/bin/../share/yosys/xilinx/cells_sim.v:1812$1167'.
+Creating register for signal `\RAM32M.\mem_d' using process `\RAM32M.$proc$/usr/bin/../share/yosys/xilinx/cells_sim.v:1812$1167'.
+Creating register for signal `\RAM32M.$bitselwrite$mask$/usr/bin/../share/yosys/xilinx/cells_sim.v:1814$1138' using process `\RAM32M.$proc$/usr/bin/../share/yosys/xilinx/cells_sim.v:1812$1167'.
+Creating register for signal `\RAM32M.$bitselwrite$data$/usr/bin/../share/yosys/xilinx/cells_sim.v:1814$1139' using process `\RAM32M.$proc$/usr/bin/../share/yosys/xilinx/cells_sim.v:1812$1167'.
+Creating register for signal `\RAM32M.$bitselwrite$sel$/usr/bin/../share/yosys/xilinx/cells_sim.v:1814$1140' using process `\RAM32M.$proc$/usr/bin/../share/yosys/xilinx/cells_sim.v:1812$1167'.
+Creating register for signal `\RAM32M.$bitselwrite$mask$/usr/bin/../share/yosys/xilinx/cells_sim.v:1815$1141' using process `\RAM32M.$proc$/usr/bin/../share/yosys/xilinx/cells_sim.v:1812$1167'.
+Creating register for signal `\RAM32M.$bitselwrite$data$/usr/bin/../share/yosys/xilinx/cells_sim.v:1815$1142' using process `\RAM32M.$proc$/usr/bin/../share/yosys/xilinx/cells_sim.v:1812$1167'.
+Creating register for signal `\RAM32M.$bitselwrite$sel$/usr/bin/../share/yosys/xilinx/cells_sim.v:1815$1143' using process `\RAM32M.$proc$/usr/bin/../share/yosys/xilinx/cells_sim.v:1812$1167'.
+Creating register for signal `\RAM32M.$bitselwrite$mask$/usr/bin/../share/yosys/xilinx/cells_sim.v:1816$1144' using process `\RAM32M.$proc$/usr/bin/../share/yosys/xilinx/cells_sim.v:1812$1167'.
+Creating register for signal `\RAM32M.$bitselwrite$data$/usr/bin/../share/yosys/xilinx/cells_sim.v:1816$1145' using process `\RAM32M.$proc$/usr/bin/../share/yosys/xilinx/cells_sim.v:1812$1167'.
+Creating register for signal `\RAM32M.$bitselwrite$sel$/usr/bin/../share/yosys/xilinx/cells_sim.v:1816$1146' using process `\RAM32M.$proc$/usr/bin/../share/yosys/xilinx/cells_sim.v:1812$1167'.
+Creating register for signal `\RAM32M.$bitselwrite$mask$/usr/bin/../share/yosys/xilinx/cells_sim.v:1817$1147' using process `\RAM32M.$proc$/usr/bin/../share/yosys/xilinx/cells_sim.v:1812$1167'.
+Creating register for signal `\RAM32M.$bitselwrite$data$/usr/bin/../share/yosys/xilinx/cells_sim.v:1817$1148' using process `\RAM32M.$proc$/usr/bin/../share/yosys/xilinx/cells_sim.v:1812$1167'.
+Creating register for signal `\RAM32M.$bitselwrite$sel$/usr/bin/../share/yosys/xilinx/cells_sim.v:1817$1149' using process `\RAM32M.$proc$/usr/bin/../share/yosys/xilinx/cells_sim.v:1812$1167'.
+Creating register for signal `\RAM32M.$lookahead\mem_a$1163' using process `\RAM32M.$proc$/usr/bin/../share/yosys/xilinx/cells_sim.v:1812$1167'.
+Creating register for signal `\RAM32M.$lookahead\mem_b$1164' using process `\RAM32M.$proc$/usr/bin/../share/yosys/xilinx/cells_sim.v:1812$1167'.
+Creating register for signal `\RAM32M.$lookahead\mem_c$1165' using process `\RAM32M.$proc$/usr/bin/../share/yosys/xilinx/cells_sim.v:1812$1167'.
+Creating register for signal `\RAM32M.$lookahead\mem_d$1166' using process `\RAM32M.$proc$/usr/bin/../share/yosys/xilinx/cells_sim.v:1812$1167'.
+Creating register for signal `\FDRE_1.\Q' using process `\FDRE_1.$proc$/usr/bin/../share/yosys/xilinx/cells_sim.v:527$788'.
+Creating register for signal `\FDRE.\Q' using process `\FDRE.$proc$/usr/bin/../share/yosys/xilinx/cells_sim.v:494$784'.
+Removing empty process `RAM32M.$proc$/usr/bin/../share/yosys/xilinx/cells_sim.v:1806$1293'.
+Removing empty process `RAM32M.$proc$/usr/bin/../share/yosys/xilinx/cells_sim.v:1805$1292'.
+Removing empty process `RAM32M.$proc$/usr/bin/../share/yosys/xilinx/cells_sim.v:1804$1291'.
+Removing empty process `RAM32M.$proc$/usr/bin/../share/yosys/xilinx/cells_sim.v:1803$1290'.
+Found and cleaned up 1 empty switch in `\RAM32M.$proc$/usr/bin/../share/yosys/xilinx/cells_sim.v:1812$1167'.
+Removing empty process `RAM32M.$proc$/usr/bin/../share/yosys/xilinx/cells_sim.v:1812$1167'.
+Removing empty process `FDRE_1.$proc$/usr/bin/../share/yosys/xilinx/cells_sim.v:0$791'.
+Found and cleaned up 2 empty switches in `\FDRE_1.$proc$/usr/bin/../share/yosys/xilinx/cells_sim.v:527$788'.
+Removing empty process `FDRE_1.$proc$/usr/bin/../share/yosys/xilinx/cells_sim.v:527$788'.
+Removing empty process `FDRE.$proc$/usr/bin/../share/yosys/xilinx/cells_sim.v:0$787'.
+Found and cleaned up 2 empty switches in `\FDRE.$proc$/usr/bin/../share/yosys/xilinx/cells_sim.v:494$784'.
+Removing empty process `FDRE.$proc$/usr/bin/../share/yosys/xilinx/cells_sim.v:494$784'.
+Found fixed chain of length 3 (FDRE):
+Found fixed chain of length 3 (FDRE):
+Found fixed chain of length 3 (FDRE):
+Found fixed chain of length 3 (FDRE):
+Found fixed chain of length 3 (FDRE):
+Found fixed chain of length 3 (FDRE):
+Found fixed chain of length 3 (FDRE):
+Found fixed chain of length 3 (FDRE):
+     CARRY4                        124
+     DSP48E1                        64
+     FDRE                          602
+     LUT1                           10
+     LUT2                          115
+     LUT3                          169
+     LUT4                           80
+     LUT5                           26
+     LUT6                           73
+     RAM32M                          8
+     CARRY4                        124
+     DSP48E1                        64
+     FDRE                          602
+     LUT1                           10
+     LUT2                          115
+     LUT3                          169
+     LUT4                           80
+     LUT5                           26
+     LUT6                           73
+     RAM32M                          8
+
+=================== 9. REPORT FILES ===================
+-rw-r--r-- 1 chaitanya chaitanya   6523 Oct  6 05:09 docs/report.md
+-rw-r--r-- 1 chaitanya chaitanya 456041 Oct  5 21:54 results/architecture.png
+-rw-r--r-- 1 chaitanya chaitanya   1756 Oct  6 05:08 results/tables.md
+
+NEXT: Vivado build and Nexys 4 board demo (in progress)

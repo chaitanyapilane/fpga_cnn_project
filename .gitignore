@@ -3,3 +3,6 @@ data/
 *.vcd
 sim
 __pycache__/
+*_sim
+*.out
+sim
